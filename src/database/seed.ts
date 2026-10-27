@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import * as argon2 from 'argon2';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../app.module.js';
+import { hashPassword } from '../auth/password.js';
 import {
   ActiveStatus,
   MaintenanceStatus,
@@ -45,9 +45,9 @@ async function seed() {
     const admin = await findOrCreate(User, { email: adminEmail }, {
       name: 'Administrador FleetCore',
       role: Role.ADMIN,
-      password: await argon2.hash(String(config.get('ADMIN_PASSWORD'))),
+      password: await hashPassword(String(config.get('ADMIN_PASSWORD'))),
     });
-    const techPassword = await argon2.hash('Tecnico123*');
+    const techPassword = await hashPassword('Tecnico123*');
     const tech1 = await findOrCreate(User, { email: 'tecnico1@fleetcore.com' }, {
       name: 'Carlos Pérez', role: Role.TECHNICIAN, password: techPassword,
     });
@@ -56,11 +56,13 @@ async function seed() {
     });
 
     // ---- Mecánicos: 2 activos (vinculados a los técnicos) + 1 inactivo ----
-    const carlos = await findOrCreate(Mechanic, { email: 'carlos.perez@fleetcore.com' }, {
-      name: 'Carlos Pérez', specialty: 'Motor y transmisión', status: ActiveStatus.ACTIVE, userId: tech1.id,
+    // Los vinculados se buscan por userId (único): así no se duplican aunque
+    // luego se edite su correo desde la API.
+    const carlos = await findOrCreate(Mechanic, { userId: tech1.id }, {
+      name: 'Carlos Pérez', email: 'carlos.perez@fleetcore.com', specialty: 'Motor y transmisión', status: ActiveStatus.ACTIVE,
     });
-    const laura = await findOrCreate(Mechanic, { email: 'laura.gomez@fleetcore.com' }, {
-      name: 'Laura Gómez', specialty: 'Frenos y suspensión', status: ActiveStatus.ACTIVE, userId: tech2.id,
+    const laura = await findOrCreate(Mechanic, { userId: tech2.id }, {
+      name: 'Laura Gómez', email: 'laura.gomez@fleetcore.com', specialty: 'Frenos y suspensión', status: ActiveStatus.ACTIVE,
     });
     await findOrCreate(Mechanic, { email: 'pedro.ruiz@fleetcore.com' }, {
       name: 'Pedro Ruiz', specialty: 'Electricidad automotriz', status: ActiveStatus.INACTIVE, userId: null,

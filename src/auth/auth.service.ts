@@ -2,11 +2,11 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
 import { User } from '../users/user.entity.js';
 import { SignupDto } from './dto/signup.dto.js';
 import { SigninDto } from './dto/signin.dto.js';
+import { hashPassword, verifyPassword } from './password.js';
 
 @Injectable()
 export class AuthService {
@@ -20,8 +20,8 @@ export class AuthService {
     if (await this.users.existsBy({ email: dto.email })) {
       throw new ConflictException(`El correo ${dto.email} ya está registrado`);
     }
-    // La contraseña NUNCA se guarda en claro: solo el hash argon2.
-    const password = await argon2.hash(dto.password);
+    // La contraseña NUNCA se guarda en claro: solo el hash bcrypt.
+    const password = await hashPassword(dto.password);
     const user = await this.users.save(this.users.create({ ...dto, password }));
     return { id: user.id, name: user.name, email: user.email, role: user.role };
   }
@@ -34,7 +34,7 @@ export class AuthService {
       .where('u.email = :email', { email: dto.email })
       .getOne();
 
-    const valid = user && (await argon2.verify(user.password, dto.password));
+    const valid = user && (await verifyPassword(dto.password, user.password));
     if (!user || !valid) throw new UnauthorizedException('Credenciales inválidas');
 
     const accessToken = await this.jwtService.signAsync({

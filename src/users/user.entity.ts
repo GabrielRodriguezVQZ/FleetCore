@@ -12,7 +12,7 @@ export class User {
   @Column({ type: 'varchar', length: 160, unique: true })
   email: string;
 
-  /** Hash argon2. `select:false` evita devolverlo en consultas normales. */
+  /** Hash bcrypt. `select:false` evita devolverlo en consultas normales. */
   @Column({ type: 'varchar', select: false })
   password: string;
 
