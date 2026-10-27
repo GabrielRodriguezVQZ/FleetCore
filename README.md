@@ -2,10 +2,10 @@
 
 REST API to manage the maintenance of FleetCore's vehicle fleet: vehicles, mechanics, workshops, and preventive/corrective maintenances.
 
-**NestJS · TypeScript · TypeORM · PostgreSQL · JWT · argon2 · Swagger**
+**NestJS · TypeScript · TypeORM · PostgreSQL · JWT · bcrypt · Swagger**
 
-- **Coder:** _YOUR FULL NAME_
-- **Clan:** _YOUR CLAN_
+- **Coder:** Gabriel Enrique Rodriguez Vasquez
+- **Clan:** Nodejs-Nestjs
 
 ---
 
@@ -21,9 +21,6 @@ git clone https://github.com/GabrielRodriguezVQZ/FleetCore.git
 cd FleetCore
 npm install
 ```
-
-> If npm blocks the `argon2` install script, run:
-> `npm install-scripts approve argon2 && npm rebuild argon2`
 
 ## 3. Database
 
@@ -91,6 +88,8 @@ npm run start:dev
 | TECHNICIAN | `tecnico1@fleetcore.com` | `Tecnico123*` |
 | TECHNICIAN | `tecnico2@fleetcore.com` | `Tecnico123*` |
 
+Roles: **ADMIN** manages everything; **TECHNICIAN** sees and updates the status of its own maintenances.
+
 Test API keys (`x-api-key` header): `demo-key-partner-1`, `demo-key-partner-2`.
 
 To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click **Authorize** → paste the token.
@@ -105,9 +104,10 @@ To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click *
 | | `GET /vehicles/:id/maintenances` (history) | ADMIN |
 | Mechanics | `POST /mechanics`, `GET /mechanics`, `GET /mechanics/:id`, `PATCH /mechanics/:id`, `PATCH /mechanics/:id/status`, `DELETE /mechanics/:id` (inactivates), `GET /mechanics/:id/maintenances` | ADMIN |
 | Workshops | `POST /workshops`, `PATCH /workshops/:id`, `PATCH /workshops/:id/status`, `DELETE /workshops/:id` (inactivates) | ADMIN |
-| | `GET /workshops` (active only), `GET /workshops/:id` | Authenticated |
+| | `GET /workshops` (active only; `?includeInactive=true` for ADMIN), `GET /workshops/:id` | Authenticated |
 | Maintenances | `POST /maintenances`, `GET /maintenances`, `GET /maintenances/active`, `GET /maintenances/vehicle/:vehicleId`, `GET /maintenances/mechanic/:mechanicId` | ADMIN |
 | | `GET /maintenances/my`, `GET /maintenances/:id`, `PATCH /maintenances/:id/status` | ADMIN / TECHNICIAN (own maintenances only) |
+| Audits | `GET /audits` (filters: `entity`, `entityId`, `action`, `userId`, `limit`) | ADMIN |
 | Integrations | `GET /integrations/vehicles/:plate/maintenances` | `x-api-key` header |
 
 ## 9. Business rules
@@ -118,10 +118,17 @@ To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click *
 - Completing a maintenance requires `workDone`, `finalCost`, `finishedAt` and `finalMileage`.
 - A vehicle cannot have more than one active maintenance (`SCHEDULED` or `IN_PROGRESS`).
 - A mechanic cannot have active maintenances with overlapping time ranges, in any workshop. Ranges are half-open: 7:30–9:00 and 9:00–10:00 are compatible.
+- A technician (mechanic) cannot work on more than one maintenance at the same time: it may have several non-overlapping `SCHEDULED` maintenances, but only one `IN_PROGRESS`. Starting a second one returns `409` until the current one is completed or cancelled. (This is how the rule "a technician cannot have more than one active maintenance" is reconciled with the rule that allows back-to-back schedules such as 7:30–9:00 and 9:00–10:00.)
 - `INACTIVE` vehicles and inactive or non-existent mechanics/workshops cannot be assigned. A maintenance mileage cannot be lower than the vehicle's current mileage.
 - "Delete" means inactivate: `DELETE` only changes the status, so the maintenance history is always preserved.
 
-## 10. Response format
+## 10. Audit log
+
+Every successful write is recorded in the `audit_logs` table: creating, updating, changing the status of and inactivating vehicles, mechanics, workshops and maintenances, plus user signups. Each entry stores the action, the entity and its id, who did it (id, email and role at that moment), the HTTP method and path, the request body (passwords are never stored) and the date.
+
+Routes are marked with the `@Audit(entity, action)` decorator and the global `AuditInterceptor` writes the entry only when the request succeeds, so rejected requests (`400`/`401`/`403`/`404`/`409`) leave no trace. Query it with `GET /audits`, for example `GET /audits?entity=Maintenance&entityId=3` shows the full history of one maintenance.
+
+## 11. Response format
 
 Success (handled by the interceptor):
 
@@ -148,20 +155,21 @@ Error (handled by the global exception filter):
 
 Validation, authentication, authorization, not-found, business-conflict and PostgreSQL unique-constraint errors are never returned as `500`.
 
-## 11. Project structure
+## 12. Project structure
 
 ```
 src/
-├── auth/            signup / signin (argon2 + JWT)
+├── auth/            signup / signin (bcrypt + JWT)
 ├── users/           User entity
 ├── vehicles/        CRUD + maintenance history
 ├── mechanics/       CRUD + activate/inactivate
 ├── workshops/       CRUD + activate/inactivate
 ├── maintenances/    lifecycle, state transitions and transactions
 ├── integrations/    endpoint protected with x-api-key
+├── audits/          audit log entity + GET /audits
 ├── database/        seed.ts
-└── common/          decorators (@Roles, @CurrentUser, @Public),
+└── common/          decorators (@Roles, @CurrentUser, @Public, @Audit),
                      guards (Jwt, Roles, ApiKey),
-                     interceptors (Transform, Logging),
+                     interceptors (Transform, Audit, Logging),
                      filters (AllExceptions), enums
 ```

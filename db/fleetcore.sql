@@ -331,9 +331,9 @@ COPY public.mechanics (id, name, email, specialty, status, "userId", "createdAt"
 --
 
 COPY public.users (id, name, email, password, role, "createdAt") FROM stdin;
-1	Administrador FleetCore	admin@fleetcore.com	$argon2id$v=19$m=65536,p=4,t=3$htErxV0IWPreCIVb1CqM1A$PS670xyra1F7Fo7hiEZjZ5KqL79HAk1apJWkb43keG0	ADMIN	2026-10-27 19:35:22.56288+00
-2	Carlos Pérez	tecnico1@fleetcore.com	$argon2id$v=19$m=65536,p=4,t=3$M1kVlpfoGPt3kkl/r2pufg$EsD8zLTMxWu2UHp2B4+AEHdsX+tfg77PWi0BXijRphw	TECHNICIAN	2026-10-27 19:35:22.56288+00
-3	Laura Gómez	tecnico2@fleetcore.com	$argon2id$v=19$m=65536,p=4,t=3$M1kVlpfoGPt3kkl/r2pufg$EsD8zLTMxWu2UHp2B4+AEHdsX+tfg77PWi0BXijRphw	TECHNICIAN	2026-10-27 19:35:22.56288+00
+1	Administrador FleetCore	admin@fleetcore.com	$2b$12$maVosViDKI7QgS9EV44T4eIDOfd8VPAq2no.rhHnsGNa.g8Sm3Dbm	ADMIN	2026-10-27 19:35:22.56288+00
+2	Carlos Pérez	tecnico1@fleetcore.com	$2b$12$GAQUVkbeTWPh/qGH9NJQ3uTZzzAo6Ib1bQL1DVw8pleMOKO1hd8.m	TECHNICIAN	2026-10-27 19:35:22.56288+00
+3	Laura Gómez	tecnico2@fleetcore.com	$2b$12$461dMuGPGvpylzy5hv8bVuxhTUlR4u0UGmUfwYr7ZuM8S0rlJZBaC	TECHNICIAN	2026-10-27 19:35:22.56288+00
 \.
 
 
@@ -518,6 +518,73 @@ ALTER TABLE ONLY public.mechanics
 
 ALTER TABLE ONLY public.maintenances
     ADD CONSTRAINT "FK_daa193fdfccde41a2ed4de8a474" FOREIGN KEY ("vehicleId") REFERENCES public.vehicles(id);
+
+
+--
+-- Name: audit_logs_action_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.audit_logs_action_enum AS ENUM (
+    'CREATE',
+    'UPDATE',
+    'STATUS_CHANGE',
+    'INACTIVATE'
+);
+
+
+--
+-- Name: audit_logs_userrole_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.audit_logs_userrole_enum AS ENUM (
+    'ADMIN',
+    'TECHNICIAN'
+);
+
+
+--
+-- Name: audit_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_logs (
+    id integer NOT NULL,
+    action public.audit_logs_action_enum NOT NULL,
+    entity character varying(40) NOT NULL,
+    "entityId" integer,
+    "userId" integer,
+    "userEmail" character varying(160),
+    "userRole" public.audit_logs_userrole_enum,
+    method character varying(10) NOT NULL,
+    path character varying(200) NOT NULL,
+    details jsonb,
+    "createdAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: audit_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.audit_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.audit_logs_id_seq OWNED BY public.audit_logs.id;
+
+ALTER TABLE ONLY public.audit_logs ALTER COLUMN id SET DEFAULT nextval('public.audit_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY (id);
+
+CREATE INDEX "IDX_2643f2a68c662985433dbddca1" ON public.audit_logs USING btree (entity, "entityId");
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT "FK_cfa83f61e4d27a87fcae1e025ab" FOREIGN KEY ("userId") REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
