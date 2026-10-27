@@ -1,118 +1,167 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# FleetCore API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API to manage the maintenance of FleetCore's vehicle fleet: vehicles, mechanics, workshops, and preventive/corrective maintenances.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+**NestJS · TypeScript · TypeORM · PostgreSQL · JWT · argon2 · Swagger**
 
-## Description
+- **Coder:** _YOUR FULL NAME_
+- **Clan:** _YOUR CLAN_
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 1. Requirements
+
+- Node.js 20+ and npm
+- PostgreSQL 14+ (or Docker, see below)
+
+## 2. Installation
 
 ```bash
-$ npm install
+git clone https://github.com/GabrielRodriguezVQZ/FleetCore.git
+cd FleetCore
+npm install
 ```
 
-## Compile and run the project
+> If npm blocks the `argon2` install script, run:
+> `npm install-scripts approve argon2 && npm rebuild argon2`
+
+## 3. Database
+
+With Docker (uses the `db` service from the repo's `docker-compose.yml`):
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d db
 ```
 
-## Run tests
+Or with a local PostgreSQL: create a database named `fleetcore`.
+
+> The Docker image only creates `POSTGRES_DB` the first time its volume is initialized. If the database does not exist, create it manually:
+> `docker compose exec db psql -U postgres -c "CREATE DATABASE fleetcore;"`
+
+## 4. Environment variables
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+| Variable | Description |
+| --- | --- |
+| `PORT` | API port (default `3000`) |
+| `DB_HOST` `DB_PORT` `DB_USER` `DB_PASSWORD` `DB_NAME` | PostgreSQL connection |
+| `DB_SYNC` | `true` creates the tables automatically (development only) |
+| `JWT_SECRET` | JWT signing secret (at least 32 characters) |
+| `JWT_EXPIRES_IN` | Token lifetime in seconds |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials of the ADMIN user created by the seeder |
+| `API_KEYS` | Valid `x-api-key` values, comma-separated |
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 5. Seeder (single command, idempotent)
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+It creates:
 
-## Observability
+- 1 `ADMIN` user and 2 `TECHNICIAN` users
+- 3 mechanics: 2 active (linked to the technicians) and 1 inactive
+- 2 workshops: 1 active and 1 inactive
+- 4 vehicles: 2 `AVAILABLE`, 1 `IN_MAINTENANCE` (with its `IN_PROGRESS` maintenance) and 1 `INACTIVE`
+- 1 `COMPLETED` maintenance to show history
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+Running it several times does **not** duplicate records.
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+A ready-to-load dump (structure + data) is also available at [`db/fleetcore.sql`](db/fleetcore.sql).
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+## 6. Run
 
-This project is already instrumented. Create a free account at [observe.nestjs.com](https://observe.nestjs.com), add an application, and paste the generated app key and secret into the `ObserveModule.forRoot()` call in `src/app.module.ts`.
+```bash
+npm run start:dev
+```
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+- API: http://localhost:3000
+- **Swagger docs: http://localhost:3000/docs**
 
-## Resources
+(Use the port set in your `.env` if you changed `PORT`.)
 
-Check out a few resources that may come in handy when working with NestJS:
+## 7. Test credentials
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Role | Email | Password |
+| --- | --- | --- |
+| ADMIN | `admin@fleetcore.com` (per `ADMIN_EMAIL`) | `Admin123*` (per `ADMIN_PASSWORD`) |
+| TECHNICIAN | `tecnico1@fleetcore.com` | `Tecnico123*` |
+| TECHNICIAN | `tecnico2@fleetcore.com` | `Tecnico123*` |
 
-## Support
+Test API keys (`x-api-key` header): `demo-key-partner-1`, `demo-key-partner-2`.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click **Authorize** → paste the token.
 
-## Stay in touch
+## 8. Endpoints
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| Module | Endpoints | Access |
+| --- | --- | --- |
+| Auth | `POST /auth/signup`, `POST /auth/signin` | Public |
+| Vehicles | `POST /vehicles`, `PATCH /vehicles/:id`, `DELETE /vehicles/:id` (inactivates) | ADMIN |
+| | `GET /vehicles`, `GET /vehicles/:id`, `GET /vehicles/plate/:plate` | Authenticated |
+| | `GET /vehicles/:id/maintenances` (history) | ADMIN |
+| Mechanics | `POST /mechanics`, `GET /mechanics`, `GET /mechanics/:id`, `PATCH /mechanics/:id`, `PATCH /mechanics/:id/status`, `DELETE /mechanics/:id` (inactivates), `GET /mechanics/:id/maintenances` | ADMIN |
+| Workshops | `POST /workshops`, `PATCH /workshops/:id`, `PATCH /workshops/:id/status`, `DELETE /workshops/:id` (inactivates) | ADMIN |
+| | `GET /workshops` (active only), `GET /workshops/:id` | Authenticated |
+| Maintenances | `POST /maintenances`, `GET /maintenances`, `GET /maintenances/active`, `GET /maintenances/vehicle/:vehicleId`, `GET /maintenances/mechanic/:mechanicId` | ADMIN |
+| | `GET /maintenances/my`, `GET /maintenances/:id`, `PATCH /maintenances/:id/status` | ADMIN / TECHNICIAN (own maintenances only) |
+| Integrations | `GET /integrations/vehicles/:plate/maintenances` | `x-api-key` header |
 
-## License
+## 9. Business rules
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- A new maintenance always starts as `SCHEDULED`.
+- Valid transitions: `SCHEDULED → IN_PROGRESS | CANCELLED` and `IN_PROGRESS → COMPLETED | CANCELLED`. `COMPLETED` and `CANCELLED` are final states; any invalid transition returns `409` with a descriptive message.
+- When a maintenance moves to `IN_PROGRESS`, the vehicle becomes `IN_MAINTENANCE`. When it is `COMPLETED`, the vehicle becomes `AVAILABLE` again and its mileage is updated to the final mileage.
+- Completing a maintenance requires `workDone`, `finalCost`, `finishedAt` and `finalMileage`.
+- A vehicle cannot have more than one active maintenance (`SCHEDULED` or `IN_PROGRESS`).
+- A mechanic cannot have active maintenances with overlapping time ranges, in any workshop. Ranges are half-open: 7:30–9:00 and 9:00–10:00 are compatible.
+- `INACTIVE` vehicles and inactive or non-existent mechanics/workshops cannot be assigned. A maintenance mileage cannot be lower than the vehicle's current mileage.
+- "Delete" means inactivate: `DELETE` only changes the status, so the maintenance history is always preserved.
+
+## 10. Response format
+
+Success (handled by the interceptor):
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {},
+  "timestamp": "2026-10-20T19:00:00.000Z"
+}
+```
+
+Error (handled by the global exception filter):
+
+```json
+{
+  "success": false,
+  "statusCode": 409,
+  "message": "Vehicle ABC123 already has an active maintenance",
+  "path": "/maintenances",
+  "timestamp": "2026-10-20T19:00:00.000Z"
+}
+```
+
+Validation, authentication, authorization, not-found, business-conflict and PostgreSQL unique-constraint errors are never returned as `500`.
+
+## 11. Project structure
+
+```
+src/
+├── auth/            signup / signin (argon2 + JWT)
+├── users/           User entity
+├── vehicles/        CRUD + maintenance history
+├── mechanics/       CRUD + activate/inactivate
+├── workshops/       CRUD + activate/inactivate
+├── maintenances/    lifecycle, state transitions and transactions
+├── integrations/    endpoint protected with x-api-key
+├── database/        seed.ts
+└── common/          decorators (@Roles, @CurrentUser, @Public),
+                     guards (Jwt, Roles, ApiKey),
+                     interceptors (Transform, Logging),
+                     filters (AllExceptions), enums
+```
