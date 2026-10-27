@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Audit } from '../common/decorators/audit.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
-import { Role } from '../common/enums.js';
+import { AuditAction, Role } from '../common/enums.js';
 import { CreateWorkshopDto } from './dto/create-workshop.dto.js';
 import { SetActiveStatusDto } from './dto/set-status.dto.js';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto.js';
@@ -15,6 +16,7 @@ export class WorkshopsController {
   constructor(private readonly workshopsService: WorkshopsService) {}
 
   @Post()
+  @Audit('Workshop', AuditAction.CREATE)
   @Roles(Role.ADMIN)
   create(@Body() dto: CreateWorkshopDto) {
     return this.workshopsService.create(dto);
@@ -32,12 +34,14 @@ export class WorkshopsController {
   }
 
   @Patch(':id')
+  @Audit('Workshop', AuditAction.UPDATE)
   @Roles(Role.ADMIN)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateWorkshopDto) {
     return this.workshopsService.update(id, dto);
   }
 
   @Patch(':id/status')
+  @Audit('Workshop', AuditAction.STATUS_CHANGE)
   @Roles(Role.ADMIN)
   setStatus(@Param('id', ParseIntPipe) id: number, @Body() dto: SetActiveStatusDto) {
     return this.workshopsService.setStatus(id, dto.status);
@@ -45,6 +49,7 @@ export class WorkshopsController {
 
   /** Eliminación lógica (inactivación). */
   @Delete(':id')
+  @Audit('Workshop', AuditAction.INACTIVATE)
   @Roles(Role.ADMIN)
   inactivate(@Param('id', ParseIntPipe) id: number) {
     return this.workshopsService.inactivate(id);

@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuditsModule } from './audits/audits.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions/all-exceptions.filter.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles/roles.guard.js';
+import { AuditInterceptor } from './common/interceptors/audit/audit.interceptor.js';
 import { LoggingInterceptor } from './common/interceptors/logging/logging.interceptor.js';
 import { TransformInterceptor } from './common/interceptors/transform/transform.interceptor.js';
 import { envSchema } from './config/env.schema.js';
@@ -43,6 +45,7 @@ import { WorkshopsModule } from './workshops/workshops.module.js';
     WorkshopsModule,
     MaintenancesModule,
     IntegrationsModule,
+    AuditsModule,
   ],
   providers: [
     // Orden importante: primero autenticación (JWT), luego autorización (roles).
@@ -50,6 +53,8 @@ import { WorkshopsModule } from './workshops/workshops.module.js';
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
+    // Después de Transform: recibe la respuesta sin envolver para leer el id.
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

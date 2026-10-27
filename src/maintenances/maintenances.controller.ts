@@ -2,8 +2,9 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthUser } from '../common/auth-user.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Audit } from '../common/decorators/audit.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
-import { Role } from '../common/enums.js';
+import { AuditAction, Role } from '../common/enums.js';
 import { CreateMaintenanceDto } from './dto/create-maintenance.dto.js';
 import { UpdateMaintenanceStatusDto } from './dto/update-maintenance-status.dto.js';
 import { MaintenancesService } from './maintenances.service.js';
@@ -15,6 +16,7 @@ export class MaintenancesController {
   constructor(private readonly maintenancesService: MaintenancesService) {}
 
   @Post()
+  @Audit('Maintenance', AuditAction.CREATE)
   @Roles(Role.ADMIN)
   create(@Body() dto: CreateMaintenanceDto) {
     return this.maintenancesService.create(dto);
@@ -58,6 +60,7 @@ export class MaintenancesController {
   }
 
   @Patch(':id/status')
+  @Audit('Maintenance', AuditAction.STATUS_CHANGE)
   @Roles(Role.ADMIN, Role.TECHNICIAN)
   updateStatus(
     @Param('id', ParseIntPipe) id: number,

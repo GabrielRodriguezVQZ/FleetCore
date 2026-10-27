@@ -32,3 +32,11 @@ export const ACTIVE_MAINTENANCE_STATUSES = [
   MaintenanceStatus.SCHEDULED,
   MaintenanceStatus.IN_PROGRESS,
 ];
+
+/** Operaciones que quedan registradas en la auditoría. */
+export enum AuditAction {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  STATUS_CHANGE = 'STATUS_CHANGE',
+  INACTIVATE = 'INACTIVATE',
+}
