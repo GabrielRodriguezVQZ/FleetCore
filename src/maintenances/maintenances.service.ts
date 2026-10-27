@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Not, Repository } from 'typeorm';
 import { AuthUser } from '../common/auth-user.js';
 import {
   ACTIVE_MAINTENANCE_STATUSES,
@@ -221,6 +221,10 @@ export class MaintenancesService {
         );
       }
 
+      if (to === MaintenanceStatus.IN_PROGRESS) {
+        await this.assertMechanicFree(manager, maintenance);
+      }
+
       if (to === MaintenanceStatus.COMPLETED) {
         this.applyClosingData(maintenance, vehicle, dto);
         vehicle.status = VehicleStatus.AVAILABLE;
@@ -236,6 +240,33 @@ export class MaintenancesService {
       await manager.save(maintenance);
       return manager.findOneOrFail(Maintenance, { where: { id }, relations: RELATIONS });
     });
+  }
+
+  /**
+   * Regla: un técnico no puede tener simultáneamente más de un mantenimiento
+   * activo. Se interpreta como "en ejecución": puede tener varios SCHEDULED sin
+   * cruce de horario (regla 3.10.d), pero solo uno IN_PROGRESS a la vez.
+   * Se bloquea la fila del mecánico para que dos peticiones simultáneas no
+   * puedan iniciar dos mantenimientos suyos al mismo tiempo.
+   */
+  private async assertMechanicFree(manager: EntityManager, maintenance: Maintenance) {
+    const mechanic = await manager.findOneOrFail(Mechanic, {
+      where: { id: maintenance.mechanicId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    const busy = await manager.findOne(Maintenance, {
+      where: {
+        mechanicId: mechanic.id,
+        status: MaintenanceStatus.IN_PROGRESS,
+        id: Not(maintenance.id),
+      },
+    });
+    if (busy) {
+      throw new ConflictException(
+        `El mecánico ${mechanic.name} ya tiene en proceso el mantenimiento ${busy.id}; ` +
+          'debe completarlo o cancelarlo antes de iniciar otro',
+      );
+    }
   }
 
   /** Exige y aplica los datos obligatorios de cierre. */
