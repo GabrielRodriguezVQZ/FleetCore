@@ -8,7 +8,7 @@ import { AuthService } from './auth.service.js';
 @Module({
   imports: [
     UsersModule,
-    // Global: el JwtAuthGuard (registrado en AppModule) necesita JwtService.
+    // Global: the JwtAuthGuard (registered in AppModule) needs JwtService.
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

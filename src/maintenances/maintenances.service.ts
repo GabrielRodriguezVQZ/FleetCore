@@ -23,8 +23,8 @@ import { UpdateMaintenanceStatusDto } from './dto/update-maintenance-status.dto.
 import { Maintenance } from './maintenance.entity.js';
 
 /**
- * Máquina de estados: estado actual -> estados a los que puede pasar.
- * COMPLETED y CANCELLED son terminales (no hay vuelta atrás).
+ * State machine: current status -> statuses it can change to.
+ * COMPLETED and CANCELLED are final (you cannot go back).
  */
 const ALLOWED_TRANSITIONS: Record<MaintenanceStatus, MaintenanceStatus[]> = {
   [MaintenanceStatus.SCHEDULED]: [MaintenanceStatus.IN_PROGRESS, MaintenanceStatus.CANCELLED],
@@ -47,9 +47,9 @@ export class MaintenancesService {
   // CREATE
   // ------------------------------------------------------------------
   /**
-   * TRANSACCIÓN: se bloquean (SELECT ... FOR UPDATE) el vehículo y el mecánico
-   * para que dos peticiones simultáneas no puedan crear mantenimientos
-   * activos duplicados o con horarios cruzados.
+   * TRANSACTION: the vehicle and the mechanic are locked (SELECT ... FOR UPDATE)
+   * so two requests at the same time cannot create duplicate active
+   * maintenances or maintenances with overlapping times.
    */
   create(dto: CreateMaintenanceDto) {
     const start = new Date(dto.scheduledAt);
@@ -89,7 +89,7 @@ export class MaintenancesService {
         );
       }
 
-      // Regla: un vehículo no puede tener más de un mantenimiento activo.
+      // Rule: a vehicle cannot have more than one active maintenance.
       const vehicleBusy = await manager.existsBy(Maintenance, {
         vehicleId: vehicle.id,
         status: In(ACTIVE_MAINTENANCE_STATUSES),
@@ -98,9 +98,9 @@ export class MaintenancesService {
         throw new ConflictException(`El vehículo ${vehicle.plate} ya tiene un mantenimiento activo`);
       }
 
-      // Regla: el mecánico no puede tener mantenimientos activos cuyos horarios se crucen
-      // (en cualquier taller). Intervalos semiabiertos [inicio, fin): terminar a las 9:00 y
-      // empezar a las 9:00 NO es cruce.
+      // Rule: the mechanic cannot have active maintenances with overlapping times
+      // (in any workshop). Half-open ranges [start, end): ending at 9:00 and
+      // starting at 9:00 is NOT an overlap.
       const overlapping = await this.findMechanicOverlap(manager, mechanic.id, start, end);
       if (overlapping) {
         throw new ConflictException(
@@ -114,7 +114,7 @@ export class MaintenancesService {
         mileage: dto.mileage,
         scheduledAt: start,
         scheduledEndAt: end,
-        status: MaintenanceStatus.SCHEDULED, // estado inicial fijo
+        status: MaintenanceStatus.SCHEDULED, // fixed starting status
         vehicleId: vehicle.id,
         mechanicId: mechanic.id,
         workshopId: workshop.id,
@@ -164,7 +164,7 @@ export class MaintenancesService {
     });
   }
 
-  /** Mantenimientos asignados al técnico autenticado (vía su mecánico vinculado). */
+  /** Maintenances assigned to the logged-in technician (through their linked mechanic). */
   async findMine(user: AuthUser) {
     const mechanic = await this.mechanics.findOneBy({ userId: user.id });
     if (!mechanic) return [];
@@ -178,7 +178,7 @@ export class MaintenancesService {
     return maintenance;
   }
 
-  /** Un TECHNICIAN solo puede ver/modificar los mantenimientos de su mecánico. */
+  /** A TECHNICIAN can only see/change the maintenances of their own mechanic. */
   private async assertAccess(maintenance: Maintenance, user?: AuthUser) {
     if (!user || user.role === Role.ADMIN) return;
     const mine = maintenance.mechanic?.userId === user.id;
@@ -189,15 +189,15 @@ export class MaintenancesService {
   // UPDATE STATUS
   // ------------------------------------------------------------------
   /**
-   * TRANSACCIÓN: el cambio de estado del mantenimiento y el del vehículo se
-   * confirman juntos (o ninguno). Se valida la transición, los datos de cierre
-   * y se sincroniza la disponibilidad del vehículo:
-   *   IN_PROGRESS -> vehículo IN_MAINTENANCE
-   *   COMPLETED   -> vehículo AVAILABLE (+ kilometraje final)
-   *   CANCELLED   -> vehículo AVAILABLE si estaba IN_MAINTENANCE
+   * TRANSACTION: the maintenance status change and the vehicle status change
+   * are saved together (or none of them). It checks the status change and the
+   * closing data, and updates the vehicle status:
+   *   IN_PROGRESS -> vehicle IN_MAINTENANCE
+   *   COMPLETED   -> vehicle AVAILABLE (+ final mileage)
+   *   CANCELLED   -> vehicle AVAILABLE if it was IN_MAINTENANCE
    */
   async updateStatus(id: number, dto: UpdateMaintenanceStatusDto, user: AuthUser) {
-    await this.findOne(id, user); // 404 / 403 antes de abrir la transacción
+    await this.findOne(id, user); // 404 / 403 before opening the transaction
 
     return this.dataSource.transaction(async (manager) => {
       const maintenance = await manager.findOne(Maintenance, {
@@ -243,11 +243,11 @@ export class MaintenancesService {
   }
 
   /**
-   * Regla: un técnico no puede tener simultáneamente más de un mantenimiento
-   * activo. Se interpreta como "en ejecución": puede tener varios SCHEDULED sin
-   * cruce de horario (regla 3.10.d), pero solo uno IN_PROGRESS a la vez.
-   * Se bloquea la fila del mecánico para que dos peticiones simultáneas no
-   * puedan iniciar dos mantenimientos suyos al mismo tiempo.
+   * Rule: a technician cannot have more than one active maintenance at the
+   * same time. "Active" here means "in progress": they can have many SCHEDULED
+   * ones without overlapping times (rule 3.10.d), but only one IN_PROGRESS at a time.
+   * The mechanic row is locked so two requests at the same time cannot
+   * start two of their maintenances at once.
    */
   private async assertMechanicFree(manager: EntityManager, maintenance: Maintenance) {
     const mechanic = await manager.findOneOrFail(Mechanic, {
@@ -269,7 +269,7 @@ export class MaintenancesService {
     }
   }
 
-  /** Exige y aplica los datos obligatorios de cierre. */
+  /** Checks and saves the required closing data. */
   private applyClosingData(maintenance: Maintenance, vehicle: Vehicle, dto: UpdateMaintenanceStatusDto) {
     const missing: string[] = [];
     if (!dto.workDone?.trim()) missing.push('workDone (trabajo realizado)');

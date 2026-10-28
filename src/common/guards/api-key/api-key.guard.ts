@@ -7,10 +7,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 /**
- * GUARD DE API KEY (integraciones externas).
- * Valida el header `x-api-key` contra la lista de claves definida en la
- * variable de entorno API_KEYS (separadas por coma). Se usa junto con
- * @Public() para saltar el JWT en los endpoints de integración.
+ * API KEY GUARD (external integrations).
+ * Checks the `x-api-key` header against the list of keys in the
+ * API_KEYS environment variable (separated by commas). It is used with
+ * @Public() to skip the JWT check on integration endpoints.
  */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {

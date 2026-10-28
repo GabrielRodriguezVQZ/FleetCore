@@ -8,6 +8,6 @@ export interface AuditMetadata {
   action: AuditAction;
 }
 
-/** Marca la ruta para que el AuditInterceptor registre la operación cuando tenga éxito. */
+/** Marks the route so the AuditInterceptor saves the operation when it works. */
 export const Audit = (entity: string, action: AuditAction) =>
   SetMetadata(AUDIT_KEY, { entity, action } satisfies AuditMetadata);

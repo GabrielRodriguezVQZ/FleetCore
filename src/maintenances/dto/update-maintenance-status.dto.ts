@@ -7,7 +7,7 @@ export class UpdateMaintenanceStatusDto {
   @IsEnum(MaintenanceStatus)
   status: MaintenanceStatus;
 
-  // Los 4 campos siguientes son obligatorios únicamente al pasar a COMPLETED.
+  // The next 4 fields are required only when changing to COMPLETED.
   @ApiPropertyOptional({ example: 'Cambio de aceite y filtros' })
   @IsOptional() @IsString() @IsNotEmpty()
   workDone?: string;

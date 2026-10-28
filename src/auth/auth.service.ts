@@ -20,14 +20,14 @@ export class AuthService {
     if (await this.users.existsBy({ email: dto.email })) {
       throw new ConflictException(`El correo ${dto.email} ya está registrado`);
     }
-    // La contraseña NUNCA se guarda en claro: solo el hash bcrypt.
+    // The password is NEVER saved as plain text: only the bcrypt hash.
     const password = await hashPassword(dto.password);
     const user = await this.users.save(this.users.create({ ...dto, password }));
     return { id: user.id, name: user.name, email: user.email, role: user.role };
   }
 
   async signin(dto: SigninDto) {
-    // `password` tiene select:false, por eso se pide explícitamente aquí.
+    // `password` has select:false, so we ask for it here on purpose.
     const user = await this.users
       .createQueryBuilder('u')
       .addSelect('u.password')

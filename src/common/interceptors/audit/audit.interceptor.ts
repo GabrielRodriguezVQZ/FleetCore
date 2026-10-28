@@ -12,15 +12,15 @@ import { AuthUser } from '../../auth-user.js';
 import { AUDIT_KEY, AuditMetadata } from '../../decorators/audit.decorator.js';
 
 /**
- * INTERCEPTOR DE AUDITORÍA.
- * En las rutas marcadas con @Audit() guarda un AuditLog (quién, qué entidad,
- * qué id, qué acción y el body enviado) SOLO si el handler terminó bien: las
- * peticiones rechazadas (400/401/403/404/409) no dejan registro.
+ * AUDIT INTERCEPTOR.
+ * On routes marked with @Audit() it saves an AuditLog (who, which entity,
+ * which id, which action and the request body) ONLY if the handler worked:
+ * rejected requests (400/401/403/404/409) are not saved.
  *
- * Se registra después del TransformInterceptor para recibir la respuesta
- * original del handler (sin envolver) y sacar de ahí el id de la entidad.
- * Si guardar la auditoría falla, se registra en el log pero no se rompe la
- * respuesta: la operación de negocio ya se confirmó.
+ * It is registered after the TransformInterceptor so it gets the original
+ * handler response (not wrapped) and can read the entity id from it.
+ * If saving the audit fails, the error goes to the log but the response
+ * still works: the business operation is already saved.
  */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -58,7 +58,7 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
-  /** Nunca se guardan contraseñas en la auditoría. */
+  /** Passwords are never saved in the audit log. */
   private sanitize(body: unknown) {
     if (!body || typeof body !== 'object' || !Object.keys(body).length) return null;
     const { password: _password, ...rest } = body as Record<string, unknown>;

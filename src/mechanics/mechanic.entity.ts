@@ -21,7 +21,7 @@ export class Mechanic {
   @Column({ type: 'enum', enum: ActiveStatus, default: ActiveStatus.ACTIVE })
   status: ActiveStatus;
 
-  /** Usuario TECHNICIAN vinculado (opcional). Permite que un técnico vea "sus" mantenimientos. */
+  /** Linked TECHNICIAN user (optional). It lets a technician see "their" maintenances. */
   @Column({ type: 'int', nullable: true, unique: true })
   userId: number | null;
 
@@ -29,7 +29,7 @@ export class Mechanic {
   @JoinColumn({ name: 'userId' })
   user: Relation<User> | null;
 
-  /** Un mecánico NO pertenece a un taller fijo: se relaciona vía mantenimientos. */
+  /** A mechanic does NOT belong to one fixed workshop: they are linked through maintenances. */
   @OneToMany(() => Maintenance, (maintenance) => maintenance.mechanic)
   maintenances: Relation<Maintenance[]>;
 

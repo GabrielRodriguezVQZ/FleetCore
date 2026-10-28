@@ -1,6 +1,6 @@
 import { Role } from './enums.js';
 
-/** Usuario autenticado que el JwtAuthGuard adjunta a `request.user`. */
+/** Logged-in user that the JwtAuthGuard adds to `request.user`. */
 export class AuthUser {
   id: number;
   email: string;

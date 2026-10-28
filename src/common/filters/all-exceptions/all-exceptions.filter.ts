@@ -9,13 +9,13 @@ import {
 import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 
 /**
- * FILTRO GLOBAL DE EXCEPCIONES.
- * Todo error sale con el mismo formato:
+ * GLOBAL EXCEPTION FILTER.
+ * Every error is returned with the same format:
  * { success:false, statusCode, message, path, timestamp }
- * - HttpException (validación, auth, roles, negocio) conserva su código.
- * - Errores de PostgreSQL (unicidad, FK, etc.) se traducen a 409/400
- *   para que NUNCA lleguen como un 500.
- * - Solo lo realmente inesperado responde 500 (y se registra en el log).
+ * - HttpException (validation, auth, roles, business) keeps its code.
+ * - PostgreSQL errors (unique, FK, etc.) are changed to 409/400
+ *   so they NEVER come back as a 500.
+ * - Only truly unexpected errors return 500 (and are written to the log).
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {

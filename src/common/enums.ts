@@ -9,7 +9,7 @@ export enum VehicleStatus {
   INACTIVE = 'INACTIVE',
 }
 
-/** Estado compartido por mecánicos y talleres. */
+/** Status used by both mechanics and workshops. */
 export enum ActiveStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -27,13 +27,13 @@ export enum MaintenanceStatus {
   CANCELLED = 'CANCELLED',
 }
 
-/** Un mantenimiento está "activo" mientras esté programado o en proceso. */
+/** A maintenance is "active" while it is scheduled or in progress. */
 export const ACTIVE_MAINTENANCE_STATUSES = [
   MaintenanceStatus.SCHEDULED,
   MaintenanceStatus.IN_PROGRESS,
 ];
 
-/** Operaciones que quedan registradas en la auditoría. */
+/** Operations that are saved in the audit log. */
 export enum AuditAction {
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',

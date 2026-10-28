@@ -1,14 +1,14 @@
 import * as bcrypt from 'bcryptjs';
 
-/** Costo de bcrypt (2^12 iteraciones): buen equilibrio entre seguridad y tiempo de respuesta. */
+/** bcrypt cost (2^12 rounds): a good balance between security and response time. */
 const SALT_ROUNDS = 12;
 
-/** Genera el hash bcrypt (con sal aleatoria incluida) de una contraseña. */
+/** Creates the bcrypt hash of a password (a random salt is included). */
 export function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, SALT_ROUNDS);
 }
 
-/** Compara una contraseña en claro con su hash bcrypt. */
+/** Compares a plain text password with its bcrypt hash. */
 export function verifyPassword(plain: string, hash: string): Promise<boolean> {
   return bcrypt.compare(plain, hash);
 }

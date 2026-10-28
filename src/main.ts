@@ -9,12 +9,12 @@ async function bootstrap() {
 
   app.use(
     helmet({
-      // Swagger UI necesita scripts/estilos inline.
+      // Swagger UI needs inline scripts/styles.
       contentSecurityPolicy: false,
     }),
   );
 
-  // Validación global de DTOs: rechaza campos desconocidos y devuelve 400.
+  // Global DTO validation: rejects unknown fields and returns 400.
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );

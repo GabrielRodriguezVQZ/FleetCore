@@ -25,7 +25,7 @@ export class VehiclesController {
     return this.vehiclesService.findAll();
   }
 
-  // Rutas estáticas antes que ':id' para que no se confundan.
+  // Fixed routes go before ':id' so they are not mixed up.
   @Get('plate/:plate')
   findByPlate(@Param('plate') plate: string) {
     return this.vehiclesService.findByPlate(plate);
@@ -49,7 +49,7 @@ export class VehiclesController {
     return this.vehiclesService.update(id, dto);
   }
 
-  /** Eliminación lógica (inactivación). */
+  /** Soft delete (sets it as inactive). */
   @Delete(':id')
   @Audit('Vehicle', AuditAction.INACTIVATE)
   @Roles(Role.ADMIN)

@@ -34,7 +34,7 @@ export class MaintenancesController {
     return this.maintenancesService.findActive();
   }
 
-  /** Mantenimientos asignados al técnico autenticado. */
+  /** Maintenances assigned to the logged-in technician. */
   @Get('my')
   @Roles(Role.TECHNICIAN, Role.ADMIN)
   findMine(@CurrentUser() user: AuthUser) {

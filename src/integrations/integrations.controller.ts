@@ -9,8 +9,8 @@ import { Maintenance } from '../maintenances/maintenance.entity.js';
 import { Vehicle } from '../vehicles/vehicle.entity.js';
 
 /**
- * Endpoints para integraciones externas. NO usan JWT: son @Public() para el
- * guard global, pero quedan protegidos por el ApiKeyGuard (header x-api-key).
+ * Endpoints for external integrations. They do NOT use JWT: they are @Public()
+ * for the global guard, but they are protected by the ApiKeyGuard (x-api-key header).
  */
 @ApiTags('Integrations')
 @ApiSecurity('api-key')
@@ -23,7 +23,7 @@ export class IntegrationsController {
     @InjectRepository(Maintenance) private readonly maintenances: Repository<Maintenance>,
   ) {}
 
-  /** Historial de mantenimientos completados de un vehículo, buscado por placa. */
+  /** History of completed maintenances of a vehicle, searched by plate. */
   @Get('vehicles/:plate/maintenances')
   async history(@Param('plate') plate: string) {
     const normalized = plate.trim().toUpperCase();

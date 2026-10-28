@@ -41,7 +41,7 @@ export class MechanicsService {
     return this.mechanics.save(Object.assign(mechanic, dto));
   }
 
-  /** Activa o inactiva. Un mecánico inactivo conserva todo su historial. */
+  /** Activates or deactivates. An inactive mechanic keeps all their history. */
   setStatus(id: number, status: ActiveStatus) {
     return this.update(id, { status });
   }
@@ -50,7 +50,7 @@ export class MechanicsService {
     return this.setStatus(id, ActiveStatus.INACTIVE);
   }
 
-  /** Mantenimientos asignados a un mecánico (activos e históricos). */
+  /** Maintenances assigned to a mechanic (active and past ones). */
   async maintenancesOf(id: number) {
     const mechanic = await this.findOne(id);
     const maintenances = await this.maintenances.find({

@@ -15,7 +15,7 @@ export class WorkshopsService {
     return this.workshops.save(this.workshops.create(dto));
   }
 
-  /** Por defecto lista solo los talleres activos. */
+  /** By default it lists only active workshops. */
   findAll(includeInactive = false) {
     return this.workshops.find({
       where: includeInactive ? {} : { status: ActiveStatus.ACTIVE },
@@ -39,7 +39,7 @@ export class WorkshopsService {
     return this.update(id, { status });
   }
 
-  /** Eliminación lógica: inactiva el taller y conserva sus mantenimientos. */
+  /** Soft delete: deactivates the workshop and keeps its maintenances. */
   inactivate(id: number) {
     return this.setStatus(id, ActiveStatus.INACTIVE);
   }

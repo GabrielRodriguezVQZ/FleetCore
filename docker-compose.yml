@@ -1,4 +1,4 @@
-# Nombre fijo del proyecto: contenedores y volumen no dependen del nombre de la carpeta.
+# Fixed project name: containers and volume do not depend on the folder name.
 name: fleetcore
 
 services:
@@ -31,7 +31,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
 
-  # Opcional: API dockerizada. Solo se levanta con --profile full
+  # Optional: API in Docker. It only starts with --profile full
   api:
     build: .
     profiles: ["full"]

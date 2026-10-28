@@ -17,11 +17,11 @@ import { Vehicle } from '../vehicles/vehicle.entity.js';
 import { Workshop } from '../workshops/workshop.entity.js';
 
 /**
- * Seeder idempotente: cada registro se busca por su clave natural
- * (correo, placa, nombre) y solo se crea si no existe. Ejecutarlo
- * varias veces NO duplica datos.
+ * Safe to run many times: each record is searched by its natural key
+ * (email, plate, name) and is only created if it does not exist. Running it
+ * many times does NOT create duplicate data.
  *
- * Uso: npm run seed
+ * Usage: npm run seed
  */
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
@@ -29,7 +29,7 @@ async function seed() {
   const config = app.get(ConfigService);
 
   await dataSource.transaction(async (manager) => {
-    /** Busca por `where`; si no existe lo crea. */
+    /** Searches by `where`; if it does not exist, it creates it. */
     async function findOrCreate<T extends object>(
       entity: new () => T,
       where: Partial<T>,
@@ -40,7 +40,7 @@ async function seed() {
       return manager.save(manager.create(entity, { ...where, ...data } as any)) as Promise<T>;
     }
 
-    // ---- Usuarios: 1 ADMIN + 2 TECHNICIAN ----
+    // ---- Users: 1 ADMIN + 2 TECHNICIAN ----
     const adminEmail = String(config.get('ADMIN_EMAIL')).toLowerCase();
     const admin = await findOrCreate(User, { email: adminEmail }, {
       name: 'Administrador FleetCore',
@@ -55,9 +55,9 @@ async function seed() {
       name: 'Laura Gómez', role: Role.TECHNICIAN, password: techPassword,
     });
 
-    // ---- Mecánicos: 2 activos (vinculados a los técnicos) + 1 inactivo ----
-    // Los vinculados se buscan por userId (único): así no se duplican aunque
-    // luego se edite su correo desde la API.
+    // ---- Mechanics: 2 active (linked to the technicians) + 1 inactive ----
+    // Linked ones are searched by userId (unique): this way they are not duplicated
+    // even if their email is changed later from the API.
     const carlos = await findOrCreate(Mechanic, { userId: tech1.id }, {
       name: 'Carlos Pérez', email: 'carlos.perez@fleetcore.com', specialty: 'Motor y transmisión', status: ActiveStatus.ACTIVE,
     });
@@ -68,7 +68,7 @@ async function seed() {
       name: 'Pedro Ruiz', specialty: 'Electricidad automotriz', status: ActiveStatus.INACTIVE, userId: null,
     });
 
-    // ---- Talleres: 1 activo + 1 inactivo ----
+    // ---- Workshops: 1 active + 1 inactive ----
     const centro = await findOrCreate(Workshop, { name: 'Taller Centro' }, {
       address: 'Calle 45 # 12-30, Barranquilla', status: ActiveStatus.ACTIVE,
     });
@@ -76,7 +76,7 @@ async function seed() {
       address: 'Carrera 51B # 80-20, Barranquilla', status: ActiveStatus.INACTIVE,
     });
 
-    // ---- Vehículos: 2 AVAILABLE, 1 IN_MAINTENANCE, 1 INACTIVE ----
+    // ---- Vehicles: 2 AVAILABLE, 1 IN_MAINTENANCE, 1 INACTIVE ----
     const abc = await findOrCreate(Vehicle, { plate: 'ABC123' }, {
       brand: 'Chevrolet', model: 'NPR', year: 2021, mileage: 52300, status: VehicleStatus.AVAILABLE,
     });
@@ -90,8 +90,8 @@ async function seed() {
       brand: 'Kenworth', model: 'T800', year: 2015, mileage: 310000, status: VehicleStatus.INACTIVE,
     });
 
-    // ---- Mantenimientos ----
-    // IN_PROGRESS para el vehículo IN_MAINTENANCE (GHI789).
+    // ---- Maintenances ----
+    // IN_PROGRESS for the IN_MAINTENANCE vehicle (GHI789).
     await findOrCreate(Maintenance, { vehicleId: ghi.id, status: MaintenanceStatus.IN_PROGRESS }, {
       type: MaintenanceType.CORRECTIVE,
       description: 'Reparación de caja de cambios',
@@ -101,7 +101,7 @@ async function seed() {
       mechanicId: carlos.id,
       workshopId: centro.id,
     });
-    // COMPLETED para mostrar historial (ABC123).
+    // COMPLETED to show history (ABC123).
     await findOrCreate(Maintenance, { vehicleId: abc.id, status: MaintenanceStatus.COMPLETED }, {
       type: MaintenanceType.PREVENTIVE,
       description: 'Cambio de aceite y filtros',

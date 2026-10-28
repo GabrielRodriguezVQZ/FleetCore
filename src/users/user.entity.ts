@@ -12,7 +12,7 @@ export class User {
   @Column({ type: 'varchar', length: 160, unique: true })
   email: string;
 
-  /** Hash bcrypt. `select:false` evita devolverlo en consultas normales. */
+  /** bcrypt hash. `select:false` keeps it out of normal queries. */
   @Column({ type: 'varchar', select: false })
   password: string;
 

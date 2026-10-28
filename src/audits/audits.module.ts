@@ -8,7 +8,7 @@ import { AuditsService } from './audits.service.js';
   imports: [TypeOrmModule.forFeature([AuditLog])],
   controllers: [AuditsController],
   providers: [AuditsService],
-  // El AuditInterceptor global (registrado en AppModule) usa AuditsService.
+  // The global AuditInterceptor (registered in AppModule) uses AuditsService.
   exports: [AuditsService],
 })
 export class AuditsModule {}

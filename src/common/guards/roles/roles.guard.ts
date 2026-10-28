@@ -9,10 +9,10 @@ import { ROLES_KEY } from '../../decorators/roles.decorator.js';
 import { Role } from '../../enums.js';
 
 /**
- * GUARD GLOBAL DE AUTORIZACIÓN POR ROLES.
- * Se ejecuta después del JwtAuthGuard. Lee los roles declarados con @Roles()
- * y responde 403 si el usuario autenticado no tiene ninguno de ellos.
- * Si la ruta no declara roles, basta con estar autenticado.
+ * GLOBAL ROLES GUARD (authorization).
+ * It runs after the JwtAuthGuard. It reads the roles set with @Roles()
+ * and returns 403 if the logged-in user does not have any of them.
+ * If the route has no roles, being logged in is enough.
  */
 @Injectable()
 export class RolesGuard implements CanActivate {

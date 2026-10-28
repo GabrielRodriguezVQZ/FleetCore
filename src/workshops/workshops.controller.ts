@@ -47,7 +47,7 @@ export class WorkshopsController {
     return this.workshopsService.setStatus(id, dto.status);
   }
 
-  /** Eliminación lógica (inactivación). */
+  /** Soft delete (sets it as inactive). */
   @Delete(':id')
   @Audit('Workshop', AuditAction.INACTIVATE)
   @Roles(Role.ADMIN)

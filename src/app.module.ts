@@ -48,12 +48,12 @@ import { WorkshopsModule } from './workshops/workshops.module.js';
     AuditsModule,
   ],
   providers: [
-    // Orden importante: primero autenticación (JWT), luego autorización (roles).
+    // Order matters: first authentication (JWT), then authorization (roles).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
-    // Después de Transform: recibe la respuesta sin envolver para leer el id.
+    // After Transform: it gets the raw response so it can read the id.
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],

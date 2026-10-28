@@ -7,10 +7,10 @@ import {
 import { Observable, map } from 'rxjs';
 
 /**
- * INTERCEPTOR DE RESPUESTA EXITOSA.
- * Envuelve todo resultado en un formato uniforme:
+ * SUCCESS RESPONSE INTERCEPTOR.
+ * Wraps every result in the same format:
  * { success, statusCode, data, timestamp }
- * El statusCode se toma de la respuesta HTTP (200, 201, ...).
+ * The statusCode comes from the HTTP response (200, 201, ...).
  */
 @Injectable()
 export class TransformInterceptor implements NestInterceptor {

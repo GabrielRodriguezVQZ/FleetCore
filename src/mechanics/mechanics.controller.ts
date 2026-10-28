@@ -48,7 +48,7 @@ export class MechanicsController {
     return this.mechanicsService.setStatus(id, dto.status);
   }
 
-  /** Eliminación lógica (inactivación). */
+  /** Soft delete (sets it as inactive). */
   @Delete(':id')
   @Audit('Mechanic', AuditAction.INACTIVATE)
   inactivate(@Param('id', ParseIntPipe) id: number) {

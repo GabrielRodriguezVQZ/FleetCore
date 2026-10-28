@@ -3,5 +3,5 @@ import { Role } from '../enums.js';
 
 export const ROLES_KEY = 'roles';
 
-/** Declara los roles que pueden ejecutar la ruta. Lo valida el RolesGuard. */
+/** Sets the roles that can use the route. The RolesGuard checks it. */
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);

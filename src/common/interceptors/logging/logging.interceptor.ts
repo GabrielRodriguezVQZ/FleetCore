@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 
-/** Registra método, ruta y duración de cada petición. */
+/** Logs the method, route and time of each request. */
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');

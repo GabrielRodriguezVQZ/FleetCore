@@ -57,12 +57,12 @@ export class VehiclesService {
     return this.vehicles.save(Object.assign(vehicle, dto));
   }
 
-  /** Eliminación lógica: pasa a INACTIVE; los mantenimientos históricos se conservan. */
+  /** Soft delete: changes to INACTIVE; past maintenances are kept. */
   async inactivate(id: number) {
     return this.update(id, { status: VehicleStatus.INACTIVE });
   }
 
-  /** Historial: mantenimientos COMPLETED del vehículo, del más reciente al más antiguo. */
+  /** History: COMPLETED maintenances of the vehicle, from newest to oldest. */
   async history(id: number) {
     const vehicle = await this.findOne(id);
     const maintenances = await this.maintenances.find({
@@ -80,9 +80,9 @@ export class VehiclesService {
   }
 
   /**
-   * El estado IN_MAINTENANCE / AVAILABLE lo gobiernan los mantenimientos.
-   * Manualmente solo se permite inactivar o reactivar, y nunca con un
-   * mantenimiento activo de por medio.
+   * The IN_MAINTENANCE / AVAILABLE status is controlled by maintenances.
+   * By hand you can only deactivate or reactivate, and never while there
+   * is an active maintenance.
    */
   private async assertManualStatusChange(vehicle: Vehicle, next: VehicleStatus) {
     if (next === VehicleStatus.IN_MAINTENANCE) {

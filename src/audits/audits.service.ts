@@ -12,9 +12,9 @@ export class AuditsService {
     return this.audits.save(this.audits.create(entry));
   }
 
-  /** Lista los registros más recientes primero, con filtros opcionales. */
+  /** Lists the newest records first, with optional filters. */
   findAll({ limit = 100, ...filters }: FindAuditsDto) {
-    // TypeORM rechaza `undefined` en el where: solo se pasan los filtros enviados.
+    // TypeORM does not accept `undefined` in where: we only pass the filters that were sent.
     const where = Object.fromEntries(
       Object.entries(filters).filter(([, value]) => value !== undefined),
     );

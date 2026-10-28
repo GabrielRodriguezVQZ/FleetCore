@@ -5,7 +5,7 @@ import { Mechanic } from '../mechanics/mechanic.entity.js';
 import { Vehicle } from '../vehicles/vehicle.entity.js';
 import { Workshop } from '../workshops/workshop.entity.js';
 
-/** numeric de Postgres llega como string; lo convertimos a number. */
+/** Postgres numeric comes as a string; we change it to a number. */
 const numericTransformer = {
   to: (value?: number | null) => value,
   from: (value?: string | null) => (value === null || value === undefined ? null : Number(value)),
@@ -24,11 +24,11 @@ export class Maintenance {
   @Column({ type: 'text' })
   description: string;
 
-  /** Kilometraje del vehículo al programar el mantenimiento. */
+  /** Vehicle mileage when the maintenance is scheduled. */
   @Column({ type: 'int' })
   mileage: number;
 
-  /** Ventana horaria [scheduledAt, scheduledEndAt): se usa para evitar cruces del mecánico. */
+  /** Time window [scheduledAt, scheduledEndAt): used so a mechanic has no overlapping jobs. */
   @Column({ type: 'timestamptz' })
   scheduledAt: Date;
 
@@ -38,7 +38,7 @@ export class Maintenance {
   @Column({ type: 'enum', enum: MaintenanceStatus, default: MaintenanceStatus.SCHEDULED })
   status: MaintenanceStatus;
 
-  // ---- Datos de cierre (obligatorios para pasar a COMPLETED) ----
+  // ---- Closing data (required to change to COMPLETED) ----
   @Column({ type: 'text', nullable: true })
   workDone: string | null;
 

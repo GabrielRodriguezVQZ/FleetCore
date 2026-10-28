@@ -10,10 +10,10 @@ export const envSchema = z.object({
   DB_NAME: z.string(),
   DB_SYNC: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.coerce.number().default(3600), // segundos
+  JWT_EXPIRES_IN: z.coerce.number().default(3600), // seconds
   ADMIN_EMAIL: z.email(),
   ADMIN_PASSWORD: z.string().min(8),
-  /** Claves válidas para x-api-key, separadas por coma. */
+  /** Valid keys for x-api-key, separated by commas. */
   API_KEYS: z.string().min(1),
 });
 

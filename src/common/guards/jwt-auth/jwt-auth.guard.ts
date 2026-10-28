@@ -10,10 +10,10 @@ import { IS_PUBLIC_KEY } from '../../decorators/public.decorator.js';
 import { AuthUser } from '../../auth-user.js';
 
 /**
- * GUARD GLOBAL DE AUTENTICACIÓN.
- * Todas las rutas exigen un JWT válido (Authorization: Bearer <token>),
- * salvo las marcadas con @Public(). Falla con 401 si no hay token,
- * es inválido o expiró. Al validar, adjunta el usuario a request.user.
+ * GLOBAL AUTHENTICATION GUARD.
+ * All routes need a valid JWT (Authorization: Bearer <token>),
+ * except the ones marked with @Public(). It fails with 401 if there is no
+ * token, or if it is invalid or expired. When valid, it adds the user to request.user.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
