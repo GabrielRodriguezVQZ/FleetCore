@@ -94,7 +94,17 @@ Test API keys (`x-api-key` header): `demo-key-partner-1`, `demo-key-partner-2`.
 
 To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click **Authorize** → paste the token.
 
-## 8. Endpoints
+## 8. Test evidence (Postman)
+
+The collection [`postman/FleetCore.postman_collection.json`](postman/FleetCore.postman_collection.json) covers the main scenarios with automatic tests (61 requests): authentication, `401`/`403`, CRUD of vehicles, mechanics and workshops, maintenance creation rules (active maintenance, overlapping schedules, inactive mechanic/workshop, mileage), the full `SCHEDULED → IN_PROGRESS → COMPLETED` lifecycle, invalid transitions, history, the `x-api-key` integration, the audit log and logical deletion.
+
+1. Start the API and run the seeder (`npm run seed`).
+2. In Postman: **Import** → select the collection file.
+3. Open the collection → **Run** (Collection Runner) and run every request **in order**. If you changed `PORT`, edit the `baseUrl` collection variable first.
+
+Each run creates its own data with unique names, so it can be run as many times as needed.
+
+## 9. Endpoints
 
 | Module | Endpoints | Access |
 | --- | --- | --- |
@@ -110,7 +120,7 @@ To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click *
 | Audits | `GET /audits` (filters: `entity`, `entityId`, `action`, `userId`, `limit`) | ADMIN |
 | Integrations | `GET /integrations/vehicles/:plate/maintenances` | `x-api-key` header |
 
-## 9. Business rules
+## 10. Business rules
 
 - A new maintenance always starts as `SCHEDULED`.
 - Valid transitions: `SCHEDULED → IN_PROGRESS | CANCELLED` and `IN_PROGRESS → COMPLETED | CANCELLED`. `COMPLETED` and `CANCELLED` are final states; any invalid transition returns `409` with a descriptive message.
@@ -122,13 +132,13 @@ To try it in Swagger: `POST /auth/signin` → copy the `accessToken` → click *
 - `INACTIVE` vehicles and inactive or non-existent mechanics/workshops cannot be assigned. A maintenance mileage cannot be lower than the vehicle's current mileage.
 - "Delete" means inactivate: `DELETE` only changes the status, so the maintenance history is always preserved.
 
-## 10. Audit log
+## 11. Audit log
 
 Every successful write is recorded in the `audit_logs` table: creating, updating, changing the status of and inactivating vehicles, mechanics, workshops and maintenances, plus user signups. Each entry stores the action, the entity and its id, who did it (id, email and role at that moment), the HTTP method and path, the request body (passwords are never stored) and the date.
 
 Routes are marked with the `@Audit(entity, action)` decorator and the global `AuditInterceptor` writes the entry only when the request succeeds, so rejected requests (`400`/`401`/`403`/`404`/`409`) leave no trace. Query it with `GET /audits`, for example `GET /audits?entity=Maintenance&entityId=3` shows the full history of one maintenance.
 
-## 11. Response format
+## 12. Response format
 
 Success (handled by the interceptor):
 
@@ -155,7 +165,7 @@ Error (handled by the global exception filter):
 
 Validation, authentication, authorization, not-found, business-conflict and PostgreSQL unique-constraint errors are never returned as `500`.
 
-## 12. Project structure
+## 13. Project structure
 
 ```
 src/

@@ -1,0 +1,2695 @@
+{
+  "info": {
+    "name": "FleetCore API - Evidencias",
+    "description": "Escenarios principales de la prueba FleetCore. Requiere la API corriendo y el seed ejecutado (npm run seed). Ejecutar completa y en orden con el Collection Runner: cada request guarda en variables los ids que usan los siguientes. Crea sus propios datos con nombres únicos, por lo que puede ejecutarse varias veces.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@fleetcore.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123*"
+    },
+    {
+      "key": "apiKey",
+      "value": "demo-key-partner-1"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticación",
+      "item": [
+        {
+          "name": "Login ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de respuesta uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"data\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Devuelve JWT y rol ADMIN\", () => {",
+                  "  pm.expect(body.data.accessToken).to.be.a(\"string\");",
+                  "  pm.expect(body.data.user.role).to.eql(\"ADMIN\");",
+                  "});",
+                  "pm.collectionVariables.set(\"adminToken\", body.data.accessToken);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"runId\", Date.now().toString().slice(-6));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signin"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login TECHNICIAN del seed (tecnico2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Rol TECHNICIAN\", () => pm.expect(body.data.user.role).to.eql(\"TECHNICIAN\"));",
+                  "pm.collectionVariables.set(\"seedTechToken\", body.data.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signin"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tecnico2@fleetcore.com\",\n  \"password\": \"Tecnico123*\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login con contraseña incorrecta -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signin"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"incorrecta\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Registro de TECHNICIAN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"No devuelve la contraseña\", () => pm.expect(body.data).to.not.have.property(\"password\"));",
+                  "pm.collectionVariables.set(\"techUserId\", body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Técnico Postman\",\n  \"email\": \"tecnico.{{runId}}@fleetcore.com\",\n  \"password\": \"Tecnico123*\",\n  \"role\": \"TECHNICIAN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Registro con correo duplicado -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicado\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"Password123*\",\n  \"role\": \"TECHNICIAN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Registro con rol inválido -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rol inválido\",\n  \"email\": \"otro.{{runId}}@fleetcore.com\",\n  \"password\": \"Password123*\",\n  \"role\": \"SUPERUSER\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Seguridad (token y roles)",
+      "item": [
+        {
+          "name": "Sin token -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje: Token\", () => pm.expect(body.message).to.include(\"Token\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Token inválido -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Mensaje: inválido\", () => pm.expect(body.message).to.include(\"inválido\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token.invalido.123"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TECHNICIAN en ruta de ADMIN -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seedTechToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TECHNICIAN intenta crear vehículo -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seedTechToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plate\": \"NO{{runId}}\",\n  \"brand\": \"X\",\n  \"model\": \"Y\",\n  \"year\": 2020,\n  \"mileage\": 0\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Vehículos",
+      "item": [
+        {
+          "name": "Crear vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Estado inicial AVAILABLE\", () => pm.expect(body.data.status).to.eql(\"AVAILABLE\"));",
+                  "pm.collectionVariables.set(\"vehicleId\", body.data.id);",
+                  "pm.collectionVariables.set(\"plate\", body.data.plate);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plate\": \"PM{{runId}}\",\n  \"brand\": \"Chevrolet\",\n  \"model\": \"NPR\",\n  \"year\": 2022,\n  \"mileage\": 10000\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear segundo vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"vehicle2Id\", body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plate\": \"PN{{runId}}\",\n  \"brand\": \"Hino\",\n  \"model\": \"300\",\n  \"year\": 2021,\n  \"mileage\": 5000\n}"
+            }
+          }
+        },
+        {
+          "name": "Placa duplicada -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje: placa\", () => pm.expect(body.message).to.include(\"placa\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plate\": \"PM{{runId}}\",\n  \"brand\": \"Chevrolet\",\n  \"model\": \"NPR\",\n  \"year\": 2022,\n  \"mileage\": 10000\n}"
+            }
+          }
+        },
+        {
+          "name": "Datos inválidos -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plate\": \"\",\n  \"brand\": \"X\",\n  \"year\": 1800,\n  \"mileage\": -5\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar vehículos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Devuelve una lista\", () => pm.expect(body.data).to.be.an(\"array\").that.is.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Es el vehículo creado\", () => pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"vehicleId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar por placa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Coincide la placa\", () => pm.expect(body.data.plate).to.eql(pm.collectionVariables.get(\"plate\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/plate/{{plate}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "plate",
+                "{{plate}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vehículo inexistente -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar kilometraje",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Kilometraje actualizado\", () => pm.expect(body.data.mileage).to.eql(12000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mileage\": 12000\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Mecánicos",
+      "item": [
+        {
+          "name": "Crear mecánico vinculado al técnico registrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Estado ACTIVE\", () => pm.expect(body.data.status).to.eql(\"ACTIVE\"));",
+                  "pm.collectionVariables.set(\"mechanicId\", body.data.id);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.userId = Number(pm.collectionVariables.get(\"techUserId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mecánico Postman\",\n  \"email\": \"mecanico.{{runId}}@fleetcore.com\",\n  \"specialty\": \"Motor\",\n  \"userId\": \"{{techUserId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear mecánico que se inactivará",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"inactiveMechanicId\", body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mecánico Inactivo\",\n  \"email\": \"inactivo.{{runId}}@fleetcore.com\",\n  \"specialty\": \"Frenos\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar mecánicos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar mecánico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics/{{mechanicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics",
+                "{{mechanicId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar mecánico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Especialidad actualizada\", () => pm.expect(body.data.specialty).to.eql(\"Motor y transmisión\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics/{{mechanicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics",
+                "{{mechanicId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Motor y transmisión\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Inactivar mecánico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Estado INACTIVE\", () => pm.expect(body.data.status).to.eql(\"INACTIVE\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics/{{inactiveMechanicId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics",
+                "{{inactiveMechanicId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Talleres",
+      "item": [
+        {
+          "name": "Crear taller",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"workshopId\", body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workshops",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workshops"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taller Postman {{runId}}\",\n  \"address\": \"Calle 1 # 2-3\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear taller que se inactivará",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"inactiveWorkshopId\", body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workshops",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workshops"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taller Inactivo {{runId}}\",\n  \"address\": \"Calle 4 # 5-6\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Inactivar taller",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workshops/{{inactiveWorkshopId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workshops",
+                "{{inactiveWorkshopId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar talleres activos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Solo talleres activos\", () => body.data.forEach((w) => pm.expect(w.status).to.eql(\"ACTIVE\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seedTechToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workshops",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workshops"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar taller",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workshops/{{workshopId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workshops",
+                "{{workshopId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Mantenimientos: creación y validaciones",
+      "item": [
+        {
+          "name": "Crear mantenimiento (SCHEDULED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Estado inicial SCHEDULED\", () => pm.expect(body.data.status).to.eql(\"SCHEDULED\"));",
+                  "pm.test(\"Incluye vehículo, mecánico y taller\", () => {",
+                  "  pm.expect(body.data.vehicle).to.be.an(\"object\");",
+                  "  pm.expect(body.data.mechanic).to.be.an(\"object\");",
+                  "  pm.expect(body.data.workshop).to.be.an(\"object\");",
+                  "});",
+                  "pm.collectionVariables.set(\"maintenanceId\", body.data.id);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicleId\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PREVENTIVE\",\n  \"description\": \"Cambio de aceite y filtros\",\n  \"mileage\": 12000,\n  \"scheduledAt\": \"2027-01-10T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-01-10T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Vehículo con mantenimiento activo -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje descriptivo\", () => pm.expect(body.message.toLowerCase()).to.include(\"mantenimiento activo\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicleId\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Prueba de validación\",\n  \"mileage\": 12000,\n  \"scheduledAt\": \"2027-02-01T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-02-01T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Horario cruzado del mecánico (8:00 dentro de 7:30-9:00) -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje descriptivo\", () => pm.expect(body.message.toLowerCase()).to.include(\"se cruza\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicle2Id\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Prueba de validación\",\n  \"mileage\": 12000,\n  \"scheduledAt\": \"2027-01-10T08:00:00.000Z\",\n  \"scheduledEndAt\": \"2027-01-10T10:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Mecánico inactivo -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje descriptivo\", () => pm.expect(body.message.toLowerCase()).to.include(\"inactivo\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicle2Id\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"inactiveMechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Prueba de validación\",\n  \"mileage\": 12000,\n  \"scheduledAt\": \"2027-03-01T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-03-01T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Taller inactivo -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje descriptivo\", () => pm.expect(body.message.toLowerCase()).to.include(\"inactivo\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicle2Id\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"inactiveWorkshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Prueba de validación\",\n  \"mileage\": 12000,\n  \"scheduledAt\": \"2027-03-01T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-03-01T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Vehículo inexistente -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje descriptivo\", () => pm.expect(body.message.toLowerCase()).to.include(\"no existe\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = 999999;",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Prueba de validación\",\n  \"mileage\": 12000,\n  \"scheduledAt\": \"2027-03-01T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-03-01T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Kilometraje menor al del vehículo -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje descriptivo\", () => pm.expect(body.message.toLowerCase()).to.include(\"kilometraje\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicle2Id\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Prueba de validación\",\n  \"mileage\": 100,\n  \"scheduledAt\": \"2027-03-01T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-03-01T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Mantenimiento seguido (9:00, justo al terminar el anterior) -> 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"maintenance2Id\", body.data.id);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicle2Id\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CORRECTIVE\",\n  \"description\": \"Revisión de frenos\",\n  \"mileage\": 5000,\n  \"scheduledAt\": \"2027-01-10T09:00:00.000Z\",\n  \"scheduledEndAt\": \"2027-01-10T10:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Mantenimientos: consultas",
+      "item": [
+        {
+          "name": "Todos los mantenimientos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mantenimientos activos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Solo SCHEDULED o IN_PROGRESS\", () => body.data.forEach((m) => pm.expect([\"SCHEDULED\", \"IN_PROGRESS\"]).to.include(m.status)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "active"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Por vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/vehicle/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "vehicle",
+                "{{vehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Por mecánico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Tiene los 2 mantenimientos del mecánico\", () => pm.expect(body.data.length).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/mechanic/{{mechanicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "mechanic",
+                "{{mechanicId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Técnico: sus mantenimientos y cambios de estado",
+      "item": [
+        {
+          "name": "Login del técnico registrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"techToken\", body.data.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signin"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tecnico.{{runId}}@fleetcore.com\",\n  \"password\": \"Tecnico123*\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mis mantenimientos (con taller)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Ve sus 2 mantenimientos\", () => pm.expect(body.data.length).to.eql(2));",
+                  "pm.test(\"Incluye el taller\", () => pm.expect(body.data[0].workshop.name).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "my"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Otro técnico no puede ver este mantenimiento -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seedTechToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Iniciar mantenimiento -> IN_PROGRESS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Mantenimiento IN_PROGRESS\", () => pm.expect(body.data.status).to.eql(\"IN_PROGRESS\"));",
+                  "pm.test(\"Vehículo pasa a IN_MAINTENANCE\", () => pm.expect(body.data.vehicle.status).to.eql(\"IN_MAINTENANCE\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Segundo mantenimiento en proceso del mismo técnico -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje: en proceso\", () => pm.expect(body.message).to.include(\"en proceso\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenance2Id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenance2Id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Completar sin datos de cierre -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje: faltan\", () => pm.expect(body.message).to.include(\"faltan\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Completar con datos de cierre -> COMPLETED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Mantenimiento COMPLETED\", () => pm.expect(body.data.status).to.eql(\"COMPLETED\"));",
+                  "pm.test(\"Vehículo vuelve a AVAILABLE\", () => pm.expect(body.data.vehicle.status).to.eql(\"AVAILABLE\"));",
+                  "pm.test(\"Kilometraje del vehículo actualizado\", () => pm.expect(body.data.vehicle.mileage).to.eql(12100));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"workDone\": \"Cambio de aceite y filtros\",\n  \"finalCost\": 350000,\n  \"finishedAt\": \"2027-01-10T09:00:00.000Z\",\n  \"finalMileage\": 12100\n}"
+            }
+          }
+        },
+        {
+          "name": "COMPLETED no puede volver a IN_PROGRESS -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});",
+                  "pm.test(\"Mensaje: Transición inválida\", () => pm.expect(body.message).to.include(\"Transición inválida\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cancelar el segundo mantenimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenance2Id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenance2Id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CANCELLED no puede pasar a IN_PROGRESS -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Mensaje: Transición inválida\", () => pm.expect(body.message).to.include(\"Transición inválida\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenance2Id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenance2Id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Historial e integraciones",
+      "item": [
+        {
+          "name": "Historial del vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Incluye el mantenimiento completado\", () => pm.expect(body.data.maintenances.map((m) => m.status)).to.include(\"COMPLETED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}",
+                "maintenances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Integración con x-api-key válida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato del ejemplo del PDF\", () => {",
+                  "  pm.expect(body.data.vehicle).to.include.keys(\"id\", \"plate\", \"brand\", \"model\", \"available\");",
+                  "  pm.expect(body.data.maintenances[0]).to.include.keys(\"id\", \"type\", \"status\", \"description\", \"mileage\", \"cost\", \"finishedAt\", \"mechanic\", \"workshop\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/integrations/vehicles/{{plate}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "integrations",
+                "vehicles",
+                "{{plate}}",
+                "maintenances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Integración sin x-api-key -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Formato de error uniforme\", () => {",
+                  "  pm.expect(body.success).to.eql(false);",
+                  "  pm.expect(body).to.have.all.keys(\"success\", \"statusCode\", \"message\", \"path\", \"timestamp\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/integrations/vehicles/{{plate}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "integrations",
+                "vehicles",
+                "{{plate}}",
+                "maintenances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Integración con x-api-key incorrecta -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "clave-incorrecta"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/integrations/vehicles/{{plate}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "integrations",
+                "vehicles",
+                "{{plate}}",
+                "maintenances"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Auditoría",
+      "item": [
+        {
+          "name": "Auditoría de un mantenimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const actions = body.data.map((a) => a.action);",
+                  "pm.test(\"Registra creación y cambios de estado\", () => {",
+                  "  pm.expect(actions).to.include(\"CREATE\");",
+                  "  pm.expect(actions.filter((a) => a === \"STATUS_CHANGE\").length).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/audits?entity=Maintenance&entityId={{maintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audits"
+              ],
+              "query": [
+                {
+                  "key": "entity",
+                  "value": "Maintenance"
+                },
+                {
+                  "key": "entityId",
+                  "value": "{{maintenanceId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "TECHNICIAN no puede consultar auditoría -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{techToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/audits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audits"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Eliminación lógica",
+      "item": [
+        {
+          "name": "Inactivar vehículo (DELETE lógico)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Estado INACTIVE\", () => pm.expect(body.data.status).to.eql(\"INACTIVE\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicle2Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicle2Id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vehículo INACTIVE no admite mantenimientos -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Mensaje: inactivo\", () => pm.expect(body.message).to.include(\"inactivo\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = JSON.parse(pm.request.body.raw);",
+                  "b.vehicleId = Number(pm.collectionVariables.get(\"vehicle2Id\"));",
+                  "b.mechanicId = Number(pm.collectionVariables.get(\"mechanicId\"));",
+                  "b.workshopId = Number(pm.collectionVariables.get(\"workshopId\"));",
+                  "pm.request.body.update(JSON.stringify(b));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PREVENTIVE\",\n  \"description\": \"No debería crearse\",\n  \"mileage\": 5000,\n  \"scheduledAt\": \"2027-04-01T07:30:00.000Z\",\n  \"scheduledEndAt\": \"2027-04-01T09:00:00.000Z\",\n  \"vehicleId\": 0,\n  \"mechanicId\": 0,\n  \"workshopId\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "El historial se conserva tras inactivar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Sigue teniendo su mantenimiento\", () => pm.expect(body.data.length).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/vehicle/{{vehicle2Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "vehicle",
+                "{{vehicle2Id}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
