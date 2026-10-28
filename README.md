@@ -183,3 +183,13 @@ src/
                      interceptors (Transform, Audit, Logging),
                      filters (AllExceptions), enums
 ```
+
+## 14. Use of AI tools
+
+This project was made with help from [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant. It was used for:
+
+- Writing part of the project's code.
+- Writing the documentation in this README.
+- Translating the code comments from Spanish to simple English.
+
+All the AI-generated work was reviewed by the author.
